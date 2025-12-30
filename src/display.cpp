@@ -51,7 +51,7 @@ void drawInterrupted()
 }
 
 /// @brief Draws milliseconds onto the lower portion of the screen.
-void drawMsValue(double ms)
+void drawMsValue(const double ms)
 {
   display.setTextSize(2);
   display.setCursor(0, LOWER_CURSOR_Y);
@@ -59,22 +59,21 @@ void drawMsValue(double ms)
 
   display.print(ms, 5 - digits);
   display.print(" ms");
-  display.display();
 }
 
 /// @brief Draws std dev onto the lower portion of the screen.
-void drawStdDevValue(double stddev)
+void drawStdDevValue(const double stddev)
 {
   display.setTextSize(1);
   display.setCursor(0, LOWER_CURSOR_Y + 18);
   display.write(GLYPH_SIGMA);
   display.print(" ");
   display.print(stddev, 2);
-  display.display();
 }
 
 /// @brief To be called between measurements, to show a live update to the user.
-void printMeasurement(uint16_t baseline, uint8_t cycle_index, double cycle_latency, uint16_t measured)
+void printMeasurement(const uint16_t baseline, const uint8_t cycle_index,
+  const double cycle_latency, const uint16_t measured)
 {
   display.clearDisplay();
 
@@ -96,7 +95,11 @@ void printMeasurement(uint16_t baseline, uint8_t cycle_index, double cycle_laten
   display.print(" / ");
   display.print(NUM_CYCLES);
 
-  drawMsValue(cycle_latency);
+  if (cycle_latency != 0.0) {
+    drawMsValue(cycle_latency);
+  }
+
+  display.display();
 }
 
 void printError()
@@ -107,11 +110,12 @@ void printError()
   display.setCursor(0, 0);
   display.println("implausible value!");
   display.print("repeating cycle...");
+
   display.display();
 }
 
 /// @brief To be called after all measurements finish, to show the statistics.
-void printAverage(double mean_ms, double sd_ms)
+void printAverage(const double mean_ms, const double sd_ms)
 {
   display.clearDisplay();
 
@@ -126,4 +130,6 @@ void printAverage(double mean_ms, double sd_ms)
 
   drawMsValue(mean_ms);
   drawStdDevValue(sd_ms);
+
+  display.display();
 }

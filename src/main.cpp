@@ -1,6 +1,6 @@
 #include "main.h"
 
-uint32_t latencies_us[NUM_CYCLES] = {0};
+uint32_t latencies_us[NUM_CYCLES] = {};
 uint8_t cycle_index = 0;
 
 volatile boolean startRequested = false;
@@ -65,7 +65,7 @@ void measure()
 {
   // get reference brightness
   uint16_t baseline = analogRead(SENSOR_PIN);
-  printMeasurement(baseline, cycle_index, 0.0);
+  printMeasurement(baseline, cycle_index);
 
   delay(MEASUREMENT_DELAY_MS);
 
@@ -90,7 +90,7 @@ void measure()
     if (abs(delta) > BRIGHTNESS_THRESHOLD)
     {
       // save and sum measured latency
-      long latency = micros() - start - internalLatency;
+      const unsigned long latency = micros() - start - internalLatency;
       Mouse.release();
 
       if (latency <= 0)
@@ -118,14 +118,7 @@ void measure()
 
 void isr()
 {
-  if (running)
-  {
-    restartRequested = true;
-  }
-  else
-  {
-    startRequested = true;
-  }
+  (running ? restartRequested : startRequested) = true;
 }
 
 /// @brief Calculates mean latency and sample standard deviation for an array of us latencies.
@@ -145,23 +138,23 @@ void computeStatsMs(double *mean_ms, double *sd_ms)
 
   if (NUM_CYCLES == 1)
   {
-    *mean_ms = (double)latencies_us[0] / MS_FACTOR;
+    *mean_ms = static_cast<double>(latencies_us[0]) / MS_FACTOR;
     *sd_ms = 0.0;
     return;
   }
 
   // calculate mean
-  for (int i = 0; i < NUM_CYCLES; i++)
+  for (const unsigned long latency : latencies_us)
   {
-    sum_us += (double)latencies_us[i];
+    sum_us += static_cast<double>(latency);
   }
-  mean_us = sum_us / (double)NUM_CYCLES;
+  mean_us = sum_us / static_cast<double>(NUM_CYCLES);
 
   // calculate sample standard deviation
 
-  for (int i = 0; i < NUM_CYCLES; i++)
+  for (const unsigned long latency : latencies_us)
   {
-    const double diff_us = ((double)latencies_us[i]) - mean_us;
+    const double diff_us = static_cast<double>(latency) - mean_us;
     variance_us += diff_us * diff_us;
   }
   sd_us = sqrt(variance_us / (NUM_CYCLES - 1));
