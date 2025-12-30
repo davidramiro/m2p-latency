@@ -23,6 +23,9 @@ static constexpr uint16_t MEASUREMENT_DELAY_MS = 574;
 static constexpr double MS_FACTOR = 1000.0;
 
 void initScreen();
+
 void isr();
+
 void measure();
+
 void computeStatsMs(double *mean_ms, double *sd_ms);

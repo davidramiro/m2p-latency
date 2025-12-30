@@ -15,10 +15,17 @@ static constexpr uint8_t DISPLAY_I2C_ADDR = 0x3C;
 static constexpr uint8_t BLINK_DELAY = 200;
 
 void drawMsValue(double mean_ms);
+
 void drawStdDevValue(double sd_ms);
+
 void printMeasurement(uint16_t baseline, uint8_t cycle_index, double cycle_latency = 0.0, uint16_t measured = 0);
+
 void printAverage(double mean_ms, double sd_ms);
+
 void showHeader();
+
 void printError();
+
 void drawStartupScreen();
+
 void drawInterrupted();

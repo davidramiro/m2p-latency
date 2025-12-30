@@ -8,156 +8,136 @@ volatile boolean restartRequested = false;
 boolean running = false;
 
 /// @brief Inits analog pin and mouse HID
-void setup()
-{
-  initScreen();
-  ADCSRA = (ADCSRA & 0xf8) | 0x04;
+void setup() {
+    initScreen();
+    ADCSRA = (ADCSRA & 0xf8) | 0x04;
 
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), isr, FALLING);
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), isr, FALLING);
 }
 
 /// @brief Measures brightness, waits for brightness change, saves latency. Shows an average after last cycle.
-void loop()
-{
-  if (startRequested)
-  {
-    startRequested = false;
-    restartRequested = false;
-    Mouse.begin();
-
-    while (cycle_index < NUM_CYCLES)
-    {
-      measure();
-
-      if (restartRequested)
-      {
-        Mouse.release();
-        cycle_index = 0;
-
-        drawInterrupted();
-        delay(1000);
+void loop() {
+    if (startRequested) {
         startRequested = false;
         restartRequested = false;
-        running = false;
-        drawStartupScreen();
-        break;
-      }
+        Mouse.begin();
+
+        while (cycle_index < NUM_CYCLES) {
+            measure();
+
+            if (restartRequested) {
+                Mouse.release();
+                cycle_index = 0;
+
+                drawInterrupted();
+                delay(1000);
+                startRequested = false;
+                restartRequested = false;
+                running = false;
+                drawStartupScreen();
+                break;
+            }
+        }
+
+        if (cycle_index == NUM_CYCLES) {
+            double mean_ms = 0.0;
+            double sd_ms = 0.0;
+            computeStatsMs(&mean_ms, &sd_ms);
+            printAverage(mean_ms, sd_ms);
+
+            cycle_index = 0;
+            running = false;
+            startRequested = false;
+            restartRequested = false;
+            Mouse.end();
+        }
     }
-
-    if (cycle_index == NUM_CYCLES)
-    {
-
-      double mean_ms = 0.0;
-      double sd_ms = 0.0;
-      computeStatsMs(&mean_ms, &sd_ms);
-      printAverage(mean_ms, sd_ms);
-
-      cycle_index = 0;
-      running = false;
-      startRequested = false;
-      restartRequested = false;
-      Mouse.end();
-    }
-  }
 }
 
-void measure()
-{
-  // get reference brightness
-  const uint16_t baseline = analogRead(SENSOR_PIN);
-  printMeasurement(baseline, cycle_index);
+void measure() {
+    // get reference brightness
+    const uint16_t baseline = analogRead(SENSOR_PIN);
+    printMeasurement(baseline, cycle_index);
 
-  running = true;
+    running = true;
 
-  // reset timer, click mouse
-  const unsigned long start = micros();
-  Mouse.press(MOUSE_LEFT);
+    // reset timer, click mouse
+    const unsigned long start = micros();
+    Mouse.press(MOUSE_LEFT);
 
-  while (true)
-  {
-    if (restartRequested)
-    {
-      return;
+    while (true) {
+        if (restartRequested) {
+            return;
+        }
+
+        const int delta = analogRead(SENSOR_PIN) - baseline;
+
+        // loop until brightness delta is bigger than threshold
+        if (abs(delta) > BRIGHTNESS_THRESHOLD) {
+            // save and sum measured latency
+            unsigned long latency = micros() - start;
+            Mouse.release();
+
+            if (latency <= internalLatency) {
+                printError();
+                delay(1000);
+                break;
+            }
+
+            latency = latency - internalLatency;
+
+            // store cycle in the array
+            if (cycle_index < NUM_CYCLES) {
+                latencies_us[cycle_index] = latency;
+            }
+
+            printMeasurement(baseline, cycle_index, latency / MS_FACTOR, baseline + delta);
+
+            delay(MEASUREMENT_DELAY_MS);
+
+            cycle_index++;
+            break;
+        }
     }
-
-    const int delta = analogRead(SENSOR_PIN) - baseline;
-
-    // loop until brightness delta is bigger than threshold
-    if (abs(delta) > BRIGHTNESS_THRESHOLD)
-    {
-      // save and sum measured latency
-      unsigned long latency = micros() - start;
-      Mouse.release();
-
-      if (latency <= internalLatency)
-      {
-        printError();
-        delay(1000);
-        break;
-      }
-
-      latency = latency - internalLatency;
-
-      // store cycle in the array
-      if (cycle_index < NUM_CYCLES)
-      {
-        latencies_us[cycle_index] = latency;
-      }
-
-      printMeasurement(baseline, cycle_index, latency / MS_FACTOR, baseline + delta);
-
-      delay(MEASUREMENT_DELAY_MS);
-
-      cycle_index++;
-      break;
-    }
-  }
 }
 
-void isr()
-{
-  (running ? restartRequested : startRequested) = true;
+void isr() {
+    (running ? restartRequested : startRequested) = true;
 }
 
 /// @brief Calculates mean latency and sample standard deviation for an array of us latencies.
-void computeStatsMs(double *mean_ms, double *sd_ms)
-{
-  double sum_us = 0.0;
-  double sd_us = 0.0;
-  double mean_us = 0.0;
-  double variance_us = 0.0;
+void computeStatsMs(double *mean_ms, double *sd_ms) {
+    double sum_us = 0.0;
+    double sd_us = 0.0;
+    double mean_us = 0.0;
+    double variance_us = 0.0;
 
-  if (NUM_CYCLES == 0)
-  {
-    *mean_ms = 0.0;
-    *sd_ms = 0.0;
-    return;
-  }
+    if (NUM_CYCLES == 0) {
+        *mean_ms = 0.0;
+        *sd_ms = 0.0;
+        return;
+    }
 
-  if (NUM_CYCLES == 1)
-  {
-    *mean_ms = static_cast<double>(latencies_us[0]) / MS_FACTOR;
-    *sd_ms = 0.0;
-    return;
-  }
+    if (NUM_CYCLES == 1) {
+        *mean_ms = static_cast<double>(latencies_us[0]) / MS_FACTOR;
+        *sd_ms = 0.0;
+        return;
+    }
 
-  // calculate mean
-  for (const unsigned long latency : latencies_us)
-  {
-    sum_us += static_cast<double>(latency);
-  }
-  mean_us = sum_us / static_cast<double>(NUM_CYCLES);
+    // calculate mean
+    for (const unsigned long latency: latencies_us) {
+        sum_us += static_cast<double>(latency);
+    }
+    mean_us = sum_us / static_cast<double>(NUM_CYCLES);
 
-  // calculate sample standard deviation
+    // calculate sample standard deviation
+    for (const unsigned long latency: latencies_us) {
+        const double diff_us = static_cast<double>(latency) - mean_us;
+        variance_us += diff_us * diff_us;
+    }
+    sd_us = sqrt(variance_us / (NUM_CYCLES - 1));
 
-  for (const unsigned long latency : latencies_us)
-  {
-    const double diff_us = static_cast<double>(latency) - mean_us;
-    variance_us += diff_us * diff_us;
-  }
-  sd_us = sqrt(variance_us / (NUM_CYCLES - 1));
-
-  *mean_ms = mean_us / MS_FACTOR;
-  *sd_ms = sd_us / MS_FACTOR;
+    *mean_ms = mean_us / MS_FACTOR;
+    *sd_ms = sd_us / MS_FACTOR;
 }
