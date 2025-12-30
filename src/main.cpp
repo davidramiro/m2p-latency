@@ -11,6 +11,7 @@ boolean running = false;
 void setup()
 {
   initScreen();
+  ADCSRA = (ADCSRA & 0xf8) | 0x04;
 
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), isr, FALLING);
@@ -64,14 +65,10 @@ void loop()
 void measure()
 {
   // get reference brightness
-  uint16_t baseline = analogRead(SENSOR_PIN);
+  const uint16_t baseline = analogRead(SENSOR_PIN);
   printMeasurement(baseline, cycle_index);
 
-  delay(MEASUREMENT_DELAY_MS);
-
   running = true;
-
-  baseline = analogRead(SENSOR_PIN);
 
   // reset timer, click mouse
   const unsigned long start = micros();
@@ -90,15 +87,17 @@ void measure()
     if (abs(delta) > BRIGHTNESS_THRESHOLD)
     {
       // save and sum measured latency
-      const unsigned long latency = micros() - start - internalLatency;
+      unsigned long latency = micros() - start;
       Mouse.release();
 
-      if (latency <= 0)
+      if (latency <= internalLatency)
       {
         printError();
         delay(1000);
         break;
       }
+
+      latency = latency - internalLatency;
 
       // store cycle in the array
       if (cycle_index < NUM_CYCLES)

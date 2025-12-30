@@ -16,9 +16,10 @@ static constexpr uint16_t BRIGHTNESS_THRESHOLD = 10;
 /// @brief Number of measurements before calculating summary
 static constexpr uint8_t NUM_CYCLES = 20;
 /// @brief Internal latency of the analog read, this lag will be subtracted from the measured latency
-static constexpr uint16_t internalLatency = 112;
-
+static constexpr uint16_t internalLatency = 40;
+/// @brief Delay between measurement cycles (should not be a divisor of display refresh rate)
 static constexpr uint16_t MEASUREMENT_DELAY_MS = 287;
+/// @brief Conversion factor between us and ms
 static constexpr double MS_FACTOR = 1000.0;
 
 void initScreen();
