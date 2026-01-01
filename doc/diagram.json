@@ -5,13 +5,6 @@
   "parts": [
     { "type": "wokwi-arduino-nano", "id": "nano", "top": -148.8, "left": -29.3, "attrs": {} },
     {
-      "type": "wokwi-photoresistor-sensor",
-      "id": "ldr1",
-      "top": -44.8,
-      "left": -220,
-      "attrs": {}
-    },
-    {
       "type": "board-ssd1306",
       "id": "oled1",
       "top": 51.14,
@@ -22,20 +15,21 @@
       "type": "wokwi-pushbutton-6mm",
       "id": "btn1",
       "top": -194.2,
-      "left": 57.6,
-      "attrs": { "color": "green", "xray": "1" }
-    }
+      "left": 48,
+      "attrs": { "color": "green", "xray": "1", "bounce": "0" }
+    },
+    { "type": "chip-temt6000", "id": "chip1", "top": -37.38, "left": 168, "attrs": {} }
   ],
   "connections": [
-    [ "ldr1:VCC", "nano:3.3V", "red", [ "h0" ] ],
-    [ "ldr1:GND", "nano:GND.1", "black", [ "h0" ] ],
     [ "nano:GND.1", "oled1:GND", "black", [ "v67.2", "h-57.6" ] ],
     [ "nano:3.3V", "oled1:VCC", "red", [ "v48", "h47.85" ] ],
     [ "nano:3", "oled1:SCL", "yellow", [ "v19.2", "h76.5" ] ],
-    [ "ldr1:AO", "nano:A3", "green", [ "h0" ] ],
     [ "oled1:SDA", "nano:2", "green", [ "v-192", "h-19.13" ] ],
     [ "nano:7", "btn1:2.l", "green", [ "v0" ] ],
-    [ "btn1:2.r", "nano:RESET.2", "black", [ "h0" ] ]
+    [ "btn1:2.r", "nano:GND.2", "black", [ "h0" ] ],
+    [ "nano:3.3V", "chip1:VCC", "red", [ "v0" ] ],
+    [ "nano:GND.1", "chip1:GND", "black", [ "v0" ] ],
+    [ "chip1:SIG", "nano:A3", "green", [ "v-28.8", "h-228.59" ] ]
   ],
   "dependencies": {}
 }

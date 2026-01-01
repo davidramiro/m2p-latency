@@ -1,0 +1,10 @@
+{
+  "name": "temt6000",
+  "author": "",
+  "pins": [
+    "VCC",
+    "GND",
+    "SIG"
+  ],
+  "controls": []
+}

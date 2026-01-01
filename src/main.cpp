@@ -5,7 +5,7 @@ uint8_t cycle_index = 0;
 
 volatile boolean startRequested = false;
 volatile boolean restartRequested = false;
-boolean running = false;
+volatile boolean running = false;
 
 /// @brief Inits analog pin and mouse HID
 void setup() {
