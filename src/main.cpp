@@ -103,7 +103,12 @@ void measure() {
 }
 
 void isr() {
-    (running ? restartRequested : startRequested) = true;
+    static unsigned long last_interrupt_time = 0;
+    unsigned long interrupt_time = millis();
+    if (interrupt_time - last_interrupt_time > 200) {
+        (running ? restartRequested : startRequested) = true;
+    }
+    last_interrupt_time = interrupt_time;
 }
 
 /// @brief Calculates mean latency and sample standard deviation for an array of us latencies.
@@ -112,12 +117,6 @@ void computeStatsMs(double *mean_ms, double *sd_ms) {
     double sd_us = 0.0;
     double mean_us = 0.0;
     double variance_us = 0.0;
-
-    if (NUM_CYCLES == 0) {
-        *mean_ms = 0.0;
-        *sd_ms = 0.0;
-        return;
-    }
 
     if (NUM_CYCLES == 1) {
         *mean_ms = static_cast<double>(latencies_us[0]) / MS_FACTOR;
