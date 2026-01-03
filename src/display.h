@@ -6,6 +6,7 @@
 static constexpr uint8_t SCREEN_WIDTH = 128;
 static constexpr uint8_t SCREEN_HEIGHT = 64;
 static constexpr int16_t LOWER_CURSOR_Y = SCREEN_HEIGHT / 2 - 4;
+static constexpr int16_t BOTTOM_CURSOR_Y = SCREEN_HEIGHT / 3 * 2;
 static constexpr uint8_t GLYPH_NEW = 0x1A;
 static constexpr uint8_t GLYPH_AVG = 0xE5;
 static constexpr uint8_t GLYPH_SIGMA = 0xE4;
@@ -26,6 +27,6 @@ void showHeader();
 
 void printError();
 
-void drawStartupScreen();
+void drawStartupScreen(uint16_t cur, uint16_t min, uint16_t max);
 
 void drawInterrupted();

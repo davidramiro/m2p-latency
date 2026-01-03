@@ -15,11 +15,9 @@ void initScreen() {
             delay(BLINK_DELAY);
         }
     }
-
-    drawStartupScreen();
 }
 
-void drawStartupScreen() {
+void drawStartupScreen(const uint16_t cur, const uint16_t min, const uint16_t max) {
     display.clearDisplay();
     display.setTextSize(1);
     display.setTextColor(WHITE);
@@ -27,9 +25,21 @@ void drawStartupScreen() {
     display.write(GLYPH_LBRAK);
     display.print(" m2p-latency ");
     display.write(GLYPH_RBRAK);
-    display.setCursor(0, LOWER_CURSOR_Y);
-    display.setTextSize(1);
+    display.setCursor(0, 9);
     display.print("Press button to start");
+
+    display.setCursor(0, LOWER_CURSOR_Y);
+    display.print(min);
+    display.setCursor(SCREEN_WIDTH / 2 - 8, LOWER_CURSOR_Y);
+    display.print(cur);
+    display.setCursor(SCREEN_WIDTH - 24, LOWER_CURSOR_Y);
+    display.print(max);
+    
+    const double bar_units = SCREEN_WIDTH / static_cast<double>(max - min);
+
+    display.drawRect(0, LOWER_CURSOR_Y + 9, SCREEN_WIDTH, 8, WHITE);
+    display.fillRect(0, LOWER_CURSOR_Y + 9, cur * bar_units, 8, WHITE);
+
     display.display();
 }
 

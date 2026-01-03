@@ -3,6 +3,11 @@
 uint32_t latencies_us[NUM_CYCLES] = {};
 uint8_t cycle_index = 0;
 
+uint16_t min_sensor_value = 65535;
+uint16_t max_sensor_value = 0;
+
+unsigned long start_millis;
+
 volatile boolean startRequested = false;
 volatile boolean restartRequested = false;
 volatile boolean running = false;
@@ -14,10 +19,16 @@ void setup() {
 
     pinMode(BUTTON_PIN, INPUT_PULLUP);
     attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), isr, FALLING);
+
+    // first ADC read is wonky, discard
+    analogRead(SENSOR_PIN);
+    start_millis = millis();
 }
 
 /// @brief Measures brightness, waits for brightness change, saves latency. Shows an average after last cycle.
 void loop() {
+    unsigned long current_millis = millis();
+
     if (startRequested) {
         startRequested = false;
         restartRequested = false;
@@ -35,7 +46,6 @@ void loop() {
                 startRequested = false;
                 restartRequested = false;
                 running = false;
-                drawStartupScreen();
                 break;
             }
         }
@@ -53,6 +63,19 @@ void loop() {
             Mouse.end();
         }
     }
+
+    if (current_millis - start_millis >= 50UL) {
+        uint16_t brightness = analogRead(SENSOR_PIN);
+        Serial.println(brightness);
+        if (max_sensor_value < brightness) {
+            max_sensor_value = brightness;
+        }
+        if (min_sensor_value > brightness) {
+            min_sensor_value = brightness;
+        }
+
+        drawStartupScreen(brightness, min_sensor_value, max_sensor_value);
+    }
 }
 
 void measure() {
@@ -64,7 +87,7 @@ void measure() {
 
     // reset timer, click mouse
     const unsigned long start = micros();
-    Mouse.press(MOUSE_LEFT);
+    Mouse.move(0, 127, 0);
 
     while (true) {
         if (restartRequested) {
@@ -77,7 +100,7 @@ void measure() {
         if (abs(delta) > BRIGHTNESS_THRESHOLD) {
             // save and sum measured latency
             unsigned long latency = micros() - start;
-            Mouse.release();
+            Mouse.move(0, -127, 0);
 
             if (latency <= internalLatency) {
                 printError();
