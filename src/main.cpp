@@ -27,6 +27,7 @@ void setup() {
 
 /// @brief Measures brightness, waits for brightness change, saves latency. Shows an average after last cycle.
 void loop() {
+    yield();
     unsigned long current_millis = millis();
 
     if (startRequested) {
@@ -61,12 +62,16 @@ void loop() {
             startRequested = false;
             restartRequested = false;
             Mouse.end();
+
+            while(digitalRead(BUTTON_PIN)){
+              // small debounce
+              delay(100);
+            }
         }
     }
 
     if (current_millis - start_millis >= 50UL) {
         uint16_t brightness = analogRead(SENSOR_PIN);
-        Serial.println(brightness);
         if (max_sensor_value < brightness) {
             max_sensor_value = brightness;
         }
