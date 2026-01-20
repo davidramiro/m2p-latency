@@ -227,7 +227,7 @@ int main(void)
 
 
 
-    while (cycle_index <= NUM_CYCLES) {
+    while (cycle_index < NUM_CYCLES) {
       measure();
       cycle_index++;
     }
