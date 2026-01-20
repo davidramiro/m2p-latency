@@ -58,9 +58,14 @@ uint32_t latencies_us[NUM_CYCLES] = {};
 uint16_t cycle_index = 0;
 uint8_t hid_report[HID_REPORT_SIZE] = {0};
 
-extern USBD_HandleTypeDef hUsbDeviceFS;
+enum MouseMode {
+  CLICK = 0,
+  MOVE = 1
+};
 
-/* == Program state == */
+enum MouseMode selectedMode = CLICK;
+
+extern USBD_HandleTypeDef hUsbDeviceFS;
 
 /* USER CODE END PV */
 
@@ -72,13 +77,54 @@ static void MX_I2C1_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 
+uint32_t clickMouse();
+void releaseMouse();
+uint32_t moveMouse();
+void moveBackMouse();
+uint8_t HID_IsIdle (const USBD_HandleTypeDef *pdev);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-uint8_t HID_IsIdle (const USBD_HandleTypeDef *pdev) {
-  return ((USBD_HID_HandleTypeDef *)pdev->pClassData)->state == USBD_HID_IDLE;
+uint32_t startMouseAction() {
+  if (selectedMode == CLICK) {
+    return clickMouse();
+  }
+
+  return moveMouse();
+}
+
+void stopMouseAction() {
+  if (selectedMode == CLICK) {
+    releaseMouse();
+  } else {
+    moveBackMouse();
+  }
+}
+
+uint32_t moveMouse() {
+  HAL_TIM_Base_Stop_IT(&htim2);
+  __HAL_TIM_SET_COUNTER(&htim2, 0);
+  HAL_TIM_Base_Start_IT(&htim2);
+
+  hid_report[0] = 0;
+  hid_report[1] = 127;
+  hid_report[2] = 127;
+  while (!HID_IsIdle(&hUsbDeviceFS)) {}
+  const uint32_t timestamp = __HAL_TIM_GET_COUNTER(&htim2);
+  USBD_HID_SendReport(&hUsbDeviceFS, hid_report, HID_REPORT_SIZE);
+
+  return timestamp;
+}
+
+void moveBackMouse() {
+  hid_report[0] = 0;
+  hid_report[1] = -127;
+  hid_report[2] = -127;
+  while (!HID_IsIdle(&hUsbDeviceFS)) {}
+  USBD_HID_SendReport(&hUsbDeviceFS, hid_report, HID_REPORT_SIZE);
 }
 
 uint32_t clickMouse() {
@@ -98,6 +144,10 @@ void releaseMouse() {
   hid_report[0] = 0;
   while (!HID_IsIdle(&hUsbDeviceFS)) {}
   USBD_HID_SendReport(&hUsbDeviceFS, hid_report, HID_REPORT_SIZE);
+}
+
+uint8_t HID_IsIdle (const USBD_HandleTypeDef *pdev) {
+  return ((USBD_HID_HandleTypeDef *)pdev->pClassData)->state == USBD_HID_IDLE;
 }
 
 /* USER CODE END 0 */
@@ -138,8 +188,8 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   ssd1306_Init();
-  drawStartupScreen();
-  HAL_Delay(1000);
+  drawSplashScreen();
+  HAL_Delay(4000);
 
   uint32_t min_adc_val = readAveragedADC();
   uint32_t max_adc_val = min_adc_val;
@@ -153,7 +203,15 @@ int main(void)
   while (1)
   {
     // wait for button press
-    while (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_10) == GPIO_PIN_SET) {
+    while (HAL_GPIO_ReadPin(BTN_CNT_GPIO_Port, BTN_CNT_Pin) == GPIO_PIN_SET) {
+      if (HAL_GPIO_ReadPin(BTN_UP_GPIO_Port, BTN_UP_Pin) == GPIO_PIN_RESET) {
+        selectedMode = MOVE;
+      }
+
+      if (HAL_GPIO_ReadPin(BTN_DN_GPIO_Port, BTN_DN_Pin) == GPIO_PIN_RESET) {
+        selectedMode = CLICK;
+      }
+
       const uint32_t adc_val = readAveragedADC();
 
       if (adc_val < min_adc_val) {
@@ -162,7 +220,7 @@ int main(void)
         max_adc_val = adc_val;
       }
 
-      drawSensorBar(min_adc_val, max_adc_val, adc_val);
+      drawStartupScreen(min_adc_val, max_adc_val, adc_val, selectedMode);
 
       HAL_Delay(10);
     }

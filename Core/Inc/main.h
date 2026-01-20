@@ -56,8 +56,8 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 
-uint32_t clickMouse();
-void releaseMouse();
+uint32_t startMouseAction();
+void stopMouseAction();
 
 /* USER CODE END EFP */
 

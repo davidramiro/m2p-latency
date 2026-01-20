@@ -33,14 +33,14 @@ void measure(void) {
 
     drawMeasurement(baseline, -1, -1);
 
-    const uint32_t start = clickMouse();
+    const uint32_t start = startMouseAction();
 
     while (1) {
         const int32_t delta = readADC() - baseline;
 
         if (abs(delta) > 50) {
             uint32_t latency = (uint32_t)__HAL_TIM_GET_COUNTER(&htim2) - start;
-            releaseMouse();
+            stopMouseAction();
 
             if (cycle_index < NUM_CYCLES) {
                 latencies_us[cycle_index] = latency;
