@@ -24,8 +24,6 @@
 
 #ifdef __cplusplus
 extern "C" {
-
-
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -64,6 +62,12 @@ void releaseMouse();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define BTN_UP_Pin GPIO_PIN_8
+#define BTN_UP_GPIO_Port GPIOA
+#define BTN_DN_Pin GPIO_PIN_9
+#define BTN_DN_GPIO_Port GPIOA
+#define BTN_CNT_Pin GPIO_PIN_10
+#define BTN_CNT_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 #define NUM_CYCLES 10

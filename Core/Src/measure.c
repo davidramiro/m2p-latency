@@ -1,4 +1,3 @@
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -30,26 +29,24 @@ uint32_t readAveragedADC() {
 }
 
 void measure(void) {
-    uint32_t baseline = readADC();
+    const uint32_t baseline = readADC();
 
     drawMeasurement(baseline, -1, -1);
 
-    uint32_t startMs = HAL_GetTick();
-    uint32_t start = clickMouse();
+    const uint32_t start = clickMouse();
 
-    while (true) {
-        int32_t delta = readADC() - baseline;
+    while (1) {
+        const int32_t delta = readADC() - baseline;
 
         if (abs(delta) > 50) {
             uint32_t latency = (uint32_t)__HAL_TIM_GET_COUNTER(&htim2) - start;
-            uint32_t latency_ms = HAL_GetTick() - startMs;
             releaseMouse();
 
             if (cycle_index < NUM_CYCLES) {
                 latencies_us[cycle_index] = latency;
             }
 
-            drawMeasurement(baseline, latency_ms, latency);
+            drawMeasurement(baseline, baseline + delta, latency);
 
             HAL_Delay(MEASUREMENT_DELAY);
 
@@ -63,7 +60,7 @@ void computeStatsMs(float *mean_ms, float *sd_ms) {
     float variance_us = 0.0f;
 
     if (NUM_CYCLES == 1) {
-        *mean_ms = (float)(latencies_us[0]) / MS_FACTOR;
+        *mean_ms = latencies_us[0] / MS_FACTOR;
         *sd_ms = 0.0f;
         return;
     }

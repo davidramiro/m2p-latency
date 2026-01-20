@@ -1,8 +1,7 @@
 #pragma once
 #include <stdint.h>
-#include "main.h"
 
-#define MS_FACTOR 1000
+#define MS_FACTOR 1000.0f
 #define MEASUREMENT_DELAY 503
 
 uint32_t readADC();

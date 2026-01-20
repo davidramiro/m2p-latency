@@ -108,7 +108,7 @@ void drawMeasurement(const uint32_t baseline, const uint32_t new,
 
 }
 
-void printAverage(float mean_ms, float sd_ms) {
+void printAverage(const float mean_ms, const float sd_ms) {
     ssd1306_Fill(Black);
 
     ssd1306_Line(0, 63, 128, 63, 1);
